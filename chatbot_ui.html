@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Multi-Agent Chatbot using LangGraph</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      color: #333;
+    }
+    header {
+      background: linear-gradient(to right, #667eea, #764ba2);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+    }
+    .project-description {
+      padding: 20px;
+      text-align: center;
+      font-size: 1.2rem;
+    }
+    .card {
+      background: white;
+      max-width: 700px;
+      margin: 20px auto;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+    }
+    .grid-item {
+      background: #eef1f6;
+      padding: 10px;
+      text-align: center;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    .contact {
+      text-align: center;
+      margin: 40px 0;
+    }
+    .contact h3 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+    }
+    .contact a {
+      margin: 0 12px;
+      font-size: 32px;
+      transition: transform 0.2s ease;
+    }
+    .contact a:hover {
+      transform: scale(1.2);
+    }
+    .fa-youtube { color: #FF0000; }
+    .fa-medium { color: #12100E; }
+    .fa-linkedin { color: #0077B5; }
+    .fa-github { color: #000; }
+
+    /* Chatbot styling */
+    .chatBot {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: 300px;
+      max-height: 400px;
+      display: none;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .chat-header {
+      background: #667eea;
+      color: #fff;
+      padding: 10px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chatbox {
+      list-style: none;
+      padding: 10px;
+      margin: 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .chat {
+      margin-bottom: 10px;
+    }
+    .chat p {
+      background: #f1f1f1;
+      padding: 8px 12px;
+      border-radius: 10px;
+      max-width: 80%;
+    }
+    .chat-incoming p {
+      background: #e0eaff;
+      align-self: flex-start;
+    }
+    .chat-outgoing p {
+      background: #d4f8d4;
+      align-self: flex-end;
+    }
+    .chat-input {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ccc;
+    }
+    .chat-input textarea {
+      flex: 1;
+      resize: none;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 8px;
+    }
+    .chat-input button {
+      background: #667eea;
+      color: #fff;
+      border: none;
+      margin-left: 8px;
+      border-radius: 5px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    #openChatBtn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 22px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><i class="fas fa-brain"></i> Multi-Agent Chatbot using LangGraph</h1>
+  </header>
+
+  <div class="project-description">
+    <p>This project demonstrates a multi-agent chatbot built using LangGraph. It leverages message-based state handling, routing, and tool invocation to simulate collaborative intelligent agents.</p>
+  </div>
+
+  <div class="card">
+    <h2>Packages Used</h2>
+    <div class="grid">
+      <div class="grid-item">LangGraph</div>
+      <div class="grid-item">LangChain</div>
+      <div class="grid-item">Groq API</div>
+      <div class="grid-item">FastAPI</div>
+    </div>
+  </div>
+
+  <div class="contact">
+    <h3><i class="fas fa-handshake"></i> Connect with Me</h3>
+    <a href="https://www.youtube.com/@avenkatesh0610" target="_blank" title="YouTube"><i class="fab fa-youtube"></i></a>
+    <a href="https://medium.com/@avenkatesh0610" target="_blank" title="Medium"><i class="fab fa-medium"></i></a>
+    <a href="https://www.linkedin.com/in/venkatesh-a-400459191/" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+    <a href="https://github.com/Venkatesh0610" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+  </div>
+
+  <!-- Chat widget -->
+  <div class="chatBot" id="chatWidget">
+    <div class="chat-header">
+      ChatBot
+      <button onclick="cancel()">&times;</button>
+    </div>
+    <ul class="chatbox" id="chatbox"></ul>
+    <div class="chat-input">
+      <textarea rows="1" placeholder="Type a message..."></textarea>
+      <button>Send</button>
+    </div>
+  </div>
+
+  <button id="openChatBtn" onclick="openChat()">💬</button>
+
+  <script>
+    const chatInput = document.querySelector('.chat-input textarea');
+    const sendChatBtn = document.querySelector('.chat-input button');
+    const chatbox = document.querySelector(".chatbox");
+    const chatWidget = document.getElementById("chatWidget");
+    const openChatBtn = document.getElementById("openChatBtn");
+
+    let userMessage;
+
+    const createChatLi = (message, className) => {
+      const chatLi = document.createElement("li");
+      chatLi.classList.add("chat", className);
+      chatLi.innerHTML = `<p>${message}</p>`;
+      return chatLi;
+    };
+
+    const generateResponse = (incomingChatLi) => {
+      const messageElement = incomingChatLi.querySelector("p");
+
+      fetch("http://localhost:8000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage,
+          session_id: "portfolio_session"
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.agent) {
+    // Show response + which agent answered
+          messageElement.innerHTML = `${data.response}<br><small style="font-size:0.7rem; color:#666;">Agent: ${data.agent}</small>`;
+        } else {
+          messageElement.textContent = data.response;
+  }
+})
+
+      .catch(() => {
+        messageElement.classList.add("error");
+        messageElement.textContent = "Oops! Something went wrong.";
+      })
+      .finally(() => chatbox.scrollTo(0, chatbox.scrollHeight));
+    };
+
+    const handleChat = () => {
+      userMessage = chatInput.value.trim();
+      if (!userMessage) return;
+
+      chatbox.appendChild(createChatLi(userMessage, "chat-outgoing"));
+      chatbox.scrollTo(0, chatbox.scrollHeight);
+      chatInput.value = "";
+
+      setTimeout(() => {
+        const incomingChatLi = createChatLi("Thinking...", "chat-incoming");
+        chatbox.appendChild(incomingChatLi);
+        chatbox.scrollTo(0, chatbox.scrollHeight);
+        generateResponse(incomingChatLi);
+      }, 600);
+    };
+
+    sendChatBtn.addEventListener("click", handleChat);
+
+    function cancel() {
+      chatWidget.style.display = "none";
+      openChatBtn.style.display = "block";
+    }
+
+    function openChat() {
+      chatWidget.style.display = "flex";
+      openChatBtn.style.display = "none";
+    }
+  </script>
+
+</body>
+</html>
+
